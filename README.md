@@ -29,23 +29,28 @@ https://github.com/andrio-fernandes/Task-Management-Application
 
 ## 🔐 Authentication
 
-* User Registration
+* User Registration (with input validation)
 * User Login
 * JWT Token Generation
 * Protected Routes
+* Profile update (name + password change with current-password verification)
 
 ## ✅ Task Management
 
 * Create Tasks
-* Read Tasks
+* Read Tasks — paginated, searchable, filterable
 * Update Tasks
 * Delete Tasks
+* Stats counts (total / completed / pending) returned with the task list
 
 ## 🛡️ Security
 
 * Password Hashing using bcrypt
 * JWT Authentication Middleware
 * Protected API Endpoints
+* Ownership checks — users can only read/update/delete **their own** tasks
+* Field whitelisting on updates (clients can't overwrite `user` / `_id`)
+* Regex-escaped search input
 
 ---
 
@@ -120,8 +125,8 @@ Create a `.env` file in the root directory:
 ```env
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_secret_key
-PORT=5000
 ```
+
 
 ---
 
@@ -145,10 +150,12 @@ npm start
 
 ## Authentication Routes
 
-| Method | Endpoint             | Description   |
-| ------ | -------------------- | ------------- |
-| POST   | `/api/auth/register` | Register User |
-| POST   | `/api/auth/login`    | Login User    |
+| Method | Endpoint             | Description            |
+| ------ | -------------------- | ---------------------- |
+| POST   | `/api/auth/register` | Register User          |
+| POST   | `/api/auth/login`    | Login User             |
+| GET    | `/api/auth/profile`  | Get Current User       |
+| PUT    | `/api/auth/profile`  | Update Name / Password |
 
 ---
 
@@ -156,16 +163,39 @@ npm start
 
 | Method | Endpoint         | Description   |
 | ------ | ---------------- | ------------- |
-| GET    | `/api/tasks`     | Get All Tasks |
+| GET    | `/api/tasks`     | Get Tasks (paginated) |
 | POST   | `/api/tasks`     | Create Task   |
 | PUT    | `/api/tasks/:id` | Update Task   |
 | DELETE | `/api/tasks/:id` | Delete Task   |
+
+### GET `/api/tasks` query parameters
+
+| Param    | Type   | Default | Description                                  |
+| -------- | ------ | ------- | -------------------------------------------- |
+| `search` | string | —       | Case-insensitive match on title/description  |
+| `status` | string | —       | `Pending` or `Completed`                     |
+| `page`   | number | `1`     | Page number                                  |
+| `limit`  | number | `10`    | Page size (max `50`)                         |
+
+### Response envelope
+
+```json
+{
+  "tasks": [],
+  "total": 0,
+  "page": 1,
+  "totalPages": 1,
+  "stats": { "total": 0, "completed": 0, "pending": 0 }
+}
+```
+
+`stats` counts are always user-wide (not affected by `search`/`page`).
 
 ---
 
 # 🔒 Protected Routes
 
-Task routes require JWT token in headers:
+Task and profile routes require JWT token in headers:
 
 ```http
 Authorization: Bearer your_jwt_token
@@ -183,6 +213,8 @@ Through this project, I learned:
 * JWT Authentication
 * Password hashing
 * CRUD operations
+* Pagination, filtering and search APIs
+* Authorization best practices (ownership checks, field whitelisting)
 * Backend deployment using Render
 * Environment variable management
 
